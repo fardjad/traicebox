@@ -1,7 +1,7 @@
 export const DEFAULT_ENDPOINT = "http://localhost:1234/v1/models";
 export const DEFAULT_API_KEY_ENV = "OPENAI_COMPATIBLE_API_KEY";
 export const DEFAULT_LITELLM_CLIENT_KEY = "sk-litellm-local-client";
-export const DEFAULT_EDGE_PORT = "8080";
+export const DEFAULT_EDGE_PORT = "5483";
 export const DEFAULT_DEV_HOME_DIRNAME = ".traicebox";
 export const LITELLM_CONFIG_RELATIVE_PATH = "litellm/config.yaml";
 export const TRAICEBOX_DEV_ENV = "TRAICEBOX_DEV";

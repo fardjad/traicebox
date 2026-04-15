@@ -84,8 +84,8 @@ traicebox generate-harness-config opencode
 
 The public endpoints are:
 
-- LiteLLM: `http://litellm.localhost:8080`
-- Langfuse: `http://langfuse.localhost:8080`
+- LiteLLM: `http://litellm.localhost:5483`
+- Langfuse: `http://langfuse.localhost:5483`
 
 ## Configuration
 
@@ -101,7 +101,7 @@ By default, it is located at:
 
 ## LiteLLM
 
-LiteLLM loads its proxy config from `${TRAICEBOX_HOME}/litellm/config.yaml`. The LiteLLM UI is available at `http://litellm.localhost:8080`, where Traicebox automatically manages your admin session for immediate access.
+LiteLLM loads its proxy config from `${TRAICEBOX_HOME}/litellm/config.yaml`. The LiteLLM UI is available at `http://litellm.localhost:5483`, where Traicebox automatically manages your admin session for immediate access.
 
 `${TRAICEBOX_HOME}/litellm/config.yaml` is the source of truth for model routing and upstream API wiring. Imported models are written directly into `model_list`, with `api_base` inferred from the import endpoint and `api_key` read from `os.environ/OPENAI_COMPATIBLE_API_KEY`.
 
@@ -131,5 +131,5 @@ traicebox generate-harness-config opencode
 
 LiteLLM sends OTEL traces to Langfuse using the built-in `langfuse_otel` callback and `LANGFUSE_OTEL_HOST=http://langfuse-web:3000`.
 
-Langfuse is accessible at `http://langfuse.localhost:8080`. By default, Traicebox disables public signups and automatically creates a browser session for the seeded admin user so you can start tracing immediately.
+Langfuse is accessible at `http://langfuse.localhost:5483`. By default, Traicebox disables public signups and automatically creates a browser session for the seeded admin user so you can start tracing immediately.
 

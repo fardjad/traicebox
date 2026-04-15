@@ -22,7 +22,7 @@ describe("buildOpencodeConfig", () => {
         MINIO_ROOT_USER: "minio",
         MINIO_ROOT_PASSWORD: "miniosecret",
         TRAICEBOX_HOST: "127.0.0.1",
-        TRAICEBOX_PORT: "8080",
+        TRAICEBOX_PORT: "5483",
         LANGFUSE_NEXTAUTH_SECRET: "secret",
         LANGFUSE_AUTH_DISABLE_SIGNUP: "true",
         LANGFUSE_PROXY_AUTOLOGIN: "true",
@@ -46,7 +46,7 @@ describe("buildOpencodeConfig", () => {
     );
 
     expect(config.provider.litellm.options).toEqual({
-      baseURL: "http://litellm.localhost:8080/v1",
+      baseURL: "http://litellm.localhost:5483/v1",
       apiKey: "sk-litellm-local-client",
     });
     expect(Object.keys(config.provider.litellm.models)).toEqual([
