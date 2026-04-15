@@ -99,6 +99,23 @@ By default, it is located at:
 | **Windows** | `%APPDATA%\Traicebox` |
 | **Linux / Others** | `~/.config/traicebox` (or respects `$XDG_CONFIG_HOME`) |
 
+### `traicebox.yaml`
+
+You can customize the stack behavior by creating or editing `${TRAICEBOX_HOME}/traicebox.yaml`.
+
+| Option | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `host` | `string` | `127.0.0.1` | The host address that Traicebox services will bind to. |
+| `port` | `number` | `5483` | The port that Traicebox services will be accessible through. |
+
+Example:
+
+```yaml
+host: 127.0.0.1
+port: 5483
+```
+
+
 ## LiteLLM
 
 LiteLLM loads its proxy config from `${TRAICEBOX_HOME}/litellm/config.yaml`. The LiteLLM UI is available at `http://litellm.localhost:5483`, where Traicebox automatically manages your admin session for immediate access.
