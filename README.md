@@ -9,6 +9,10 @@ It includes:
 - Auto-login proxies for LiteLLM UI and Langfuse
 - Config generator for Harness Tools such as OpenCode
 
+## Prerequisites
+
+Traicebox requires [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) to be installed and running on your system.
+
 ## Installation
 
 ### Published Package (Recommended)
@@ -59,33 +63,88 @@ source <(traicebox completion)
 
 ## Usage
 
-Create the local Traicebox home:
+### 1. Initial Setup
+
+Initialize the Traicebox home directory:
 
 ```bash
 traicebox setup
 ```
 
-Start the stack:
+### 2. Import Models
+
+Before starting the stack, you need to import your available models into LiteLLM. By default, Traicebox looks for an [LM Studio](https://lmstudio.ai/) endpoint at `http://localhost:1234/v1/models`.
+
+```bash
+traicebox models import-from-openai-api
+```
+
+To use a different OpenAI-compatible endpoint:
+
+```bash
+traicebox models import-from-openai-api --endpoint http://your-api:port/v1/models
+```
+
+If the endpoint requires authentication, provide the API key via the `OPENAI_COMPATIBLE_API_KEY` environment variable:
+
+```bash
+OPENAI_COMPATIBLE_API_KEY="your-api-key" traicebox models import-from-openai-api --endpoint http://your-api:port/v1/models
+```
+
+
+### 3. Configure External Tools (Optional)
+
+If you use [OpenCode](https://github.com/fardjad/opencode), you can synchronize its model configuration with Traicebox.
+
+> [!WARNING]
+> The following command will overwrite your existing OpenCode configuration file.
+
+```bash
+traicebox generate-harness-config opencode > ~/.config/opencode/opencode.jsonc
+```
+
+### 4. Start the Stack
 
 ```bash
 traicebox start
 ```
 
-Other useful commands:
+Once running, you can access the public endpoints:
+
+- **LiteLLM**: `http://litellm.localhost:5483`
+- **Langfuse**: `http://langfuse.localhost:5483`
+
+### 5. Verify and Test
+
+If you configured OpenCode in step 3, you can test the integration:
 
 ```bash
-traicebox stop
-traicebox restart
-traicebox destroy
-traicebox models import-from-openai-api
-traicebox models clear
-traicebox generate-harness-config opencode
+# Refresh the models cache
+opencode models --refresh
+
+# Run a test prompt
+opencode run -m 'litellm/your/model' 'Just write a greeting message!'
 ```
 
-The public endpoints are:
+> [!NOTE]
+> Replace `'litellm/your/model'` with one of the models imported in step 2.
 
-- LiteLLM: `http://litellm.localhost:5483`
-- Langfuse: `http://langfuse.localhost:5483`
+After running a prompt, you can inspect the captured traces in Langfuse by visiting:
+[http://langfuse.localhost:5483/project/local-project/sessions](http://langfuse.localhost:5483/project/local-project/sessions)
+
+There, you can select the latest session to inspect system prompts, user messages, and tool interactions.
+
+### Other Useful Commands
+
+| Command | Description |
+| :--- | :--- |
+| `traicebox stop` | Stop the stack. |
+| `traicebox restart` | Recreate and restart the stack. |
+| `traicebox destroy` | Remove the stack and delete local data volumes. |
+| `traicebox models clear` | Clear the custom model list from LiteLLM. |
+
+For more information on available commands and options, run `traicebox --help`.
+
 
 ## Configuration
 
