@@ -1,0 +1,266 @@
+services:
+  db:
+    image: pgautoupgrade/pgautoupgrade:18-alpine
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=${POSTGRES_SUPERUSER}
+      - POSTGRES_PASSWORD=${POSTGRES_SUPERPASS}
+      - PGAUTO_DEVEL=
+      - PGAUTO_ONESHOT=no
+      - LITELLM_DB_NAME=${LITELLM_DB_NAME}
+      - LITELLM_DB_USER=${LITELLM_DB_USER}
+      - LITELLM_DB_PASSWORD=${LITELLM_DB_PASSWORD}
+      - LANGFUSE_DB_NAME=${LANGFUSE_DB_NAME}
+      - LANGFUSE_DB_USER=${LANGFUSE_DB_USER}
+      - LANGFUSE_DB_PASSWORD=${LANGFUSE_DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_SUPERUSER} -d postgres && psql -U ${POSTGRES_SUPERUSER} -d postgres -tAc \"SELECT 1 FROM pg_database WHERE datname IN ('${LITELLM_DB_NAME}','${LANGFUSE_DB_NAME}')\" | grep -q 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./postgres/init/00-app-databases.sh:/docker-entrypoint-initdb.d/00-app-databases.sh:ro
+  langfuse-clickhouse:
+    image: clickhouse/clickhouse-server
+    user: "101:101"
+    environment:
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB}
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+      - TZ=UTC
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 1s
+    volumes:
+      - langfuse_clickhouse_data:/var/lib/clickhouse
+      - langfuse_clickhouse_logs:/var/log/clickhouse-server
+  langfuse-redis:
+    image: redis:latest
+    command:
+      - --requirepass
+      - ${LANGFUSE_REDIS_PASSWORD}
+      - --maxmemory-policy
+      - noeviction
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${LANGFUSE_REDIS_PASSWORD}", "ping"]
+      interval: 3s
+      timeout: 10s
+      retries: 10
+    volumes:
+      - langfuse_redis_data:/data
+  langfuse-minio:
+    image: cgr.dev/chainguard/minio
+    entrypoint: sh
+    command:
+      - -c
+      - mkdir -p /data/langfuse && minio server --address ":9000" --console-address ":9001" /data
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 1s
+      timeout: 5s
+      retries: 5
+      start_period: 1s
+    volumes:
+      - langfuse_minio_data:/data
+  langfuse-worker:
+    image: langfuse/langfuse-worker:3
+    depends_on:
+      db:
+        condition: service_healthy
+      langfuse-web:
+        condition: service_healthy
+      langfuse-minio:
+        condition: service_healthy
+      langfuse-redis:
+        condition: service_healthy
+      langfuse-clickhouse:
+        condition: service_healthy
+    environment: &langfuse-env
+      NEXTAUTH_URL: http://langfuse.localhost:${TRAICEBOX_PORT}
+      DATABASE_URL: postgresql://${LANGFUSE_DB_USER}:${LANGFUSE_DB_PASSWORD}@db:5432/${LANGFUSE_DB_NAME}
+      SALT: ${LANGFUSE_SALT}
+      ENCRYPTION_KEY: "${LANGFUSE_ENCRYPTION_KEY}"
+      TELEMETRY_ENABLED: "${LANGFUSE_TELEMETRY_ENABLED}"
+      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "${LANGFUSE_EXPERIMENTAL_FEATURES}"
+      CLICKHOUSE_MIGRATION_URL: clickhouse://langfuse-clickhouse:9000
+      CLICKHOUSE_URL: http://langfuse-clickhouse:8123
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+      CLICKHOUSE_CLUSTER_ENABLED: "false"
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+      LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://langfuse-minio:9000
+      LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+      REDIS_HOST: langfuse-redis
+      REDIS_PORT: "6379"
+      REDIS_AUTH: ${LANGFUSE_REDIS_PASSWORD}
+  langfuse-web:
+    image: langfuse/langfuse:3
+    depends_on:
+      db:
+        condition: service_healthy
+      langfuse-minio:
+        condition: service_healthy
+      langfuse-redis:
+        condition: service_healthy
+      langfuse-clickhouse:
+        condition: service_healthy
+    environment:
+      <<: *langfuse-env
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET}
+      AUTH_DISABLE_SIGNUP: ${LANGFUSE_AUTH_DISABLE_SIGNUP}
+      LANGFUSE_INIT_ORG_ID: ${LANGFUSE_INIT_ORG_ID}
+      LANGFUSE_INIT_ORG_NAME: ${LANGFUSE_INIT_ORG_NAME}
+      LANGFUSE_INIT_PROJECT_ID: ${LANGFUSE_INIT_PROJECT_ID}
+      LANGFUSE_INIT_PROJECT_NAME: ${LANGFUSE_INIT_PROJECT_NAME}
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_INIT_PROJECT_PUBLIC_KEY}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_INIT_PROJECT_SECRET_KEY}
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL}
+      LANGFUSE_INIT_USER_NAME: ${LANGFUSE_INIT_USER_NAME}
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD}
+    healthcheck:
+      test: ["CMD", "node", "-e", "const host = process.env.HOSTNAME || 'localhost'; fetch('http://' + host + ':3000/api/auth/csrf').then(async (r) => { const ok = r.ok && (await r.text()).includes('csrfToken'); process.exit(ok ? 0 : 1); }).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 20s
+  langfuse-proxy:
+    build:
+      context: .
+      dockerfile: langfuse-proxy/Dockerfile
+    depends_on:
+      langfuse-web:
+        condition: service_healthy
+    environment:
+      - PORT=3000
+      - LANGFUSE_PUBLIC_ORIGIN=http://langfuse.localhost:${TRAICEBOX_PORT}
+      - LANGFUSE_UPSTREAM_ORIGIN=http://langfuse-web:3000
+      - LANGFUSE_PROXY_AUTOLOGIN=${LANGFUSE_PROXY_AUTOLOGIN}
+      - LANGFUSE_INIT_USER_EMAIL=${LANGFUSE_INIT_USER_EMAIL}
+      - LANGFUSE_INIT_USER_PASSWORD=${LANGFUSE_INIT_USER_PASSWORD}
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://127.0.0.1:3000/readyz').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
+  litellm:
+    image: docker.litellm.ai/berriai/litellm:main-latest
+    depends_on:
+      db:
+        condition: service_healthy
+      langfuse-web:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${LITELLM_DB_USER}:${LITELLM_DB_PASSWORD}@db:5432/${LITELLM_DB_NAME}
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_INIT_PROJECT_PUBLIC_KEY}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_INIT_PROJECT_SECRET_KEY}
+      - LANGFUSE_OTEL_HOST=http://langfuse-web:3000
+      - LANGFUSE_TRACING_ENVIRONMENT=${LANGFUSE_TRACING_ENVIRONMENT}
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    secrets:
+      - source: openai_compatible_api_key
+        target: openai_compatible_api_key
+    volumes:
+      - ./litellm:/app/litellm-config:ro
+    entrypoint:
+      - /bin/sh
+      - /app/litellm-config/start-litellm.sh
+    command:
+      - --config
+      - /app/litellm-config/config.yaml
+      - --log_config
+      - /app/litellm-config/logging.json
+      - --port
+      - "4000"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:4000/health/readiness', timeout=5).getcode() == 200 else 1)"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 20s
+  litellm-ui-proxy:
+    build:
+      context: .
+      dockerfile: litellm-ui-proxy/Dockerfile
+    depends_on:
+      litellm:
+        condition: service_healthy
+    environment:
+      - PORT=4000
+      - LITELLM_UPSTREAM_ORIGIN=http://litellm:4000
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://127.0.0.1:4000/readyz').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
+  litellm-bootstrap:
+    image: curlimages/curl:8.16.0
+    depends_on:
+      litellm:
+        condition: service_healthy
+    environment:
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
+      - LITELLM_CLIENT_KEY=${LITELLM_CLIENT_KEY}
+    volumes:
+      - ./litellm/bootstrap-client-key.sh:/bootstrap-client-key.sh:ro
+    entrypoint:
+      - sh
+      - /bootstrap-client-key.sh
+  caddy:
+    image: caddy:2-alpine
+    depends_on:
+      langfuse-proxy:
+        condition: service_healthy
+      litellm:
+        condition: service_healthy
+      litellm-ui-proxy:
+        condition: service_healthy
+    ports:
+      - ${TRAICEBOX_HOST}:${TRAICEBOX_PORT}:${TRAICEBOX_PORT}
+    environment:
+      - TRAICEBOX_PORT=${TRAICEBOX_PORT}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- --header='Host: litellm.localhost:${TRAICEBOX_PORT}' http://127.0.0.1:${TRAICEBOX_PORT}/health/readiness >/dev/null && wget -qO- --header='Host: litellm.localhost:${TRAICEBOX_PORT}' http://127.0.0.1:${TRAICEBOX_PORT}/ui/ >/dev/null && wget -qO- --header='Host: langfuse.localhost:${TRAICEBOX_PORT}' http://127.0.0.1:${TRAICEBOX_PORT}/readyz >/dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
+volumes:
+  postgres_data:
+    driver: local
+  langfuse_clickhouse_data:
+    driver: local
+  langfuse_clickhouse_logs:
+    driver: local
+  langfuse_minio_data:
+    driver: local
+  langfuse_redis_data:
+    driver: local
+secrets:
+  openai_compatible_api_key:
+    file: ${OPENAI_COMPATIBLE_API_KEY_SECRET_FILE:-/dev/null}

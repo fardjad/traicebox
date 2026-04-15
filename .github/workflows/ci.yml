@@ -1,0 +1,58 @@
+name: ci
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+jobs:
+  cli-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@main
+        with:
+          bun-version: latest
+
+      - name: Verify Bun version
+        run: bun --version
+
+      - name: Install CLI dependencies
+        run: bun install
+
+      - name: Run type check
+        run: bun run typecheck
+
+      - name: Run Biome check
+        run: bun run check
+
+      - name: Run CLI tests
+        run: bun run test
+
+      - name: Build CLI package
+        run: bun run build
+
+      - name: Build CLI release binaries
+        run: |
+          set -euo pipefail
+          mkdir -p ./dist
+          for target_map in \
+            "bun-linux-x64:dist/traicebox-linux-x64" \
+            "bun-windows-x64:dist/traicebox-windows-x64.exe" \
+            "bun-darwin-x64:dist/traicebox-macos-x64" \
+            "bun-darwin-arm64:dist/traicebox-macos-arm64" \
+            "bun-linux-arm64:dist/traicebox-linux-arm64" \
+            "bun-windows-arm64:dist/traicebox-windows-arm64.exe"
+          do
+            target="${target_map%%:*}"
+            outfile="${target_map##*:}"
+            echo "Building ${target} -> ${outfile}"
+            bun build ./cli/index.ts --compile --no-compile-autoload-dotenv --target="${target}" --outfile="${outfile}"
+          done

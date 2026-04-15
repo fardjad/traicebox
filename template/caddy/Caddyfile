@@ -1,0 +1,18 @@
+{
+  auto_https off
+}
+
+http://langfuse.localhost:{$TRAICEBOX_PORT} {
+  reverse_proxy langfuse-proxy:3000
+}
+
+http://litellm.localhost:{$TRAICEBOX_PORT} {
+  @litellm_ui path /ui /ui/*
+  handle @litellm_ui {
+    reverse_proxy litellm-ui-proxy:4000
+  }
+
+  handle {
+    reverse_proxy litellm:4000
+  }
+}
