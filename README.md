@@ -1,13 +1,20 @@
-# Tr**ai**cebox
+# Traicebox
 
-Tr**ai**cebox is a zero-config local developer stack for tracing and session tracking around LLM and AI model workflows.
+**Traicebox** is a zero-config local developer stack for tracing and session tracking around LLM and AI model workflows. It enables developers to have a working local tracing and inspection setup within minutes.
 
-It includes:
+### Key Use Cases
 
-- LiteLLM with a custom callback for session tracking
-- Langfuse
-- Auto-login proxies for LiteLLM UI and Langfuse
-- Config generator for Harness Tools such as OpenCode
+- **Tool & Prompt Development**: Debug plugins, skills, or prompts for harness tools like [OpenCode](https://opencode.ai/) with full visibility.
+- **Model Evaluation**: Evaluate and compare local models (e.g., via LM Studio) with detailed trace logging. The built-in config generator makes setting up tools remarkably simple.
+- **Application Development**: Build AI applications with minimal code changes. Requests routed through the built-in LiteLLM proxy automatically generate traces in Langfuse. You can group these traces into sessions by adding an `x-litellm-session-id` header to your requests.
+
+### Included in the Stack
+
+- **LiteLLM**: Unified proxy for LLM backends with custom session-tracking callbacks.
+- **Langfuse**: Open-source tracing and observability for LLM applications.
+- **Auto-login Proxies**: Dynamic proxies providing immediate, authenticated access to LiteLLM UI and Langfuse.
+- **Harness Integration**: Automatic configuration generation for external tools like OpenCode.
+
 
 ## Prerequisites
 
@@ -94,7 +101,7 @@ OPENAI_COMPATIBLE_API_KEY="your-api-key" traicebox models import-from-openai-api
 
 ### 3. Configure External Tools (Optional)
 
-If you use [OpenCode](https://github.com/fardjad/opencode), you can synchronize its model configuration with Traicebox.
+If you use [OpenCode](https://opencode.ai/), you can synchronize its model configuration with Traicebox.
 
 > [!WARNING]
 > The following command will overwrite your existing OpenCode configuration file.
@@ -133,6 +140,41 @@ After running a prompt, you can inspect the captured traces in Langfuse by visit
 [http://langfuse.localhost:5483/project/local-project/sessions](http://langfuse.localhost:5483/project/local-project/sessions)
 
 There, you can select the latest session to inspect system prompts, user messages, and tool interactions.
+
+#### Application Integration (with Session Tracking)
+
+You can integrate Traicebox into your own applications by pointing your LLM client to the LiteLLM proxy. To group related traces together, simply include an `x-litellm-session-id` header in your requests.
+
+Here is an example using `curl` to demonstrate session grouping:
+
+```bash
+MODEL_NAME="your-model-name"
+
+# First request in a session
+curl http://litellm.localhost:5483/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-litellm-local-client" \
+  -H "x-litellm-session-id: my-test-session" \
+  -d "{
+    \"model\": \"$MODEL_NAME\",
+    \"messages\": [{\"role\": \"user\", \"content\": \"Hello! This is a test message to start my session.\"}]
+  }"
+
+# Second request in the same session
+curl http://litellm.localhost:5483/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-litellm-local-client" \
+  -H "x-litellm-session-id: my-test-session" \
+  -d "{
+    \"model\": \"$MODEL_NAME\",
+    \"messages\": [{\"role\": \"user\", \"content\": \"Goodbye! I am done with this test session.\"}]
+  }"
+```
+
+> [!NOTE]
+> Set `MODEL_NAME` to one of the exact model names imported in step 2. The default API key is `sk-litellm-local-client`.
+
+Refresh the [Langfuse sessions page](http://langfuse.localhost:5483/project/local-project/sessions) to see both traces grouped under the `my-test-session` ID.
 
 ### Other Useful Commands
 
