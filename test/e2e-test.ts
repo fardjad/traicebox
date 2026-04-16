@@ -10,6 +10,7 @@ process.chdir(join(import.meta.dir, ".."));
 type ShellResult = ReturnType<typeof $>;
 
 const TARGET_MODEL = "google/gemma-4-26b-a4b";
+const MODELS_ENDPOINT = "http://127.0.0.1:1234/v1";
 
 async function buildProject() {
   console.log("Building the project...");
@@ -31,9 +32,16 @@ async function createTestEnvironment() {
 }
 
 async function setupAndImportModels(runCmd: (args: string[]) => ShellResult) {
-  console.log("Setting up defaults and importing models from LM Studio...");
+  console.log(
+    `Setting up defaults and importing models from ${MODELS_ENDPOINT}...`,
+  );
   await runCmd(["setup"]);
-  await runCmd(["models", "import-from-openai-api", "--endpoint", "lm-studio"]);
+  await runCmd([
+    "models",
+    "import-from-openai-api",
+    "--endpoint",
+    MODELS_ENDPOINT,
+  ]);
 }
 
 async function verifyTargetModelAvailability(tempDir: string) {
@@ -48,7 +56,7 @@ async function verifyTargetModelAvailability(tempDir: string) {
 
   if (!modelNames.includes(TARGET_MODEL)) {
     throw new Error(
-      `The smoke test requires the '${TARGET_MODEL}' model to be loaded in LM Studio.`,
+      `The smoke test requires the '${TARGET_MODEL}' model to be loaded at ${MODELS_ENDPOINT}.`,
     );
   }
 }
