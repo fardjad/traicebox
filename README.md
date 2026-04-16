@@ -77,6 +77,15 @@ Initialize the Traicebox home directory:
 traicebox setup
 ```
 
+If the home directory already exists and you want to reset it to defaults, use the `--force` flag:
+
+```bash
+traicebox setup --force
+```
+
+> [!CAUTION]
+> `--force` permanently deletes the existing home directory and all its contents, including your `traicebox.yaml` configuration and LiteLLM model list.
+
 ### 2. Import Models
 
 Before starting the stack, you need to import your available models into LiteLLM. Traicebox requires an endpoint URL or alias to fetch models from.
@@ -184,12 +193,13 @@ Refresh the [Langfuse sessions page](http://langfuse.localhost:5483/project/loca
 
 ### Other Useful Commands
 
-| Command                  | Description                                     |
-| :----------------------- | :---------------------------------------------- |
-| `traicebox stop`         | Stop the stack.                                 |
-| `traicebox restart`      | Recreate and restart the stack.                 |
-| `traicebox destroy`      | Remove the stack and delete local data volumes. |
-| `traicebox models clear` | Clear the custom model list from LiteLLM.       |
+| Command                   | Description                                                   |
+| :------------------------ | :------------------------------------------------------------ |
+| `traicebox stop`          | Stop the stack.                                               |
+| `traicebox restart`       | Recreate and restart the stack.                               |
+| `traicebox destroy`       | Remove the stack and delete local data volumes.               |
+| `traicebox setup --force` | Reset the home directory to defaults (deletes existing data). |
+| `traicebox models clear`  | Clear the custom model list from LiteLLM.                     |
 
 For more information on available commands and options, run `traicebox --help`.
 

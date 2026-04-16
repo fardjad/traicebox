@@ -1,14 +1,19 @@
+import { rmSync } from "node:fs";
 import { ensureDockerReady } from "../lib/docker";
 import { fail } from "../lib/errors";
 import { getRuntime } from "../lib/runtime";
 import { materializeTemplate, writeDevelopmentDotenv } from "../lib/template";
 
-export async function runSetup(): Promise<void> {
+export async function runSetup(force = false): Promise<void> {
   await ensureDockerReady().catch((error) => {
     fail(error instanceof Error ? error.message : String(error));
   });
 
   const runtime = getRuntime();
+
+  if (force) {
+    rmSync(runtime.home, { recursive: true, force: true });
+  }
 
   try {
     await materializeTemplate(runtime.home, "fail-if-exists");

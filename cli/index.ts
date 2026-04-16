@@ -28,6 +28,10 @@ type ImportModelsArgs = {
   apiKeyEnv: string;
 };
 
+type SetupArgs = {
+  force: boolean;
+};
+
 type ClearModelsArgs = {
   config: string;
 };
@@ -49,9 +53,15 @@ await yargs(hideBin(process.argv))
   .command(
     "setup",
     "Create the Traicebox home directory",
-    () => {},
-    async () => {
-      await runSetup();
+    (cmd: Argv) =>
+      cmd.option("force", {
+        alias: "f",
+        type: "boolean",
+        default: false,
+        describe: "Delete the existing home directory and recreate it",
+      }),
+    async (argv) => {
+      await runSetup((argv as SetupArgs).force);
     },
   )
   .command(
