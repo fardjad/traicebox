@@ -1,8 +1,7 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Ora } from "ora";
-import ora from "ora";
+import { Spinner } from "picospinner";
 
 import {
   DEFAULT_EDGE_PORT,
@@ -38,7 +37,7 @@ const LONG_RUNNING_SERVICES = [
 
 let activeDockerComposeProcess: ChildProcess | null = null;
 let forwardedInterrupt = false;
-let activeSpinner: Ora | null = null;
+let activeSpinner: Spinner | null = null;
 let activeSecretDirectory: string | null = null;
 
 function printAccessInfo(command: StackCommand): void {
@@ -205,11 +204,8 @@ async function runStep(
     return;
   }
 
-  const spinner = ora({
-    text,
-    spinner: "dots",
-    discardStdin: false,
-  }).start();
+  const spinner = new Spinner(text);
+  spinner.start();
   activeSpinner = spinner;
 
   try {

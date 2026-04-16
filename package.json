@@ -42,7 +42,7 @@
     "typescript": "^6.0.2"
   },
   "dependencies": {
-    "ora": "^9.3.0",
+    "picospinner": "^3.0.0",
     "yaml": "^2.8.3",
     "yargs": "^18.0.0"
   }
