@@ -13,7 +13,7 @@ import {
   importModelsFromOpenAICompatibleApi,
 } from "./handlers/internal-config";
 import { runSetup } from "./handlers/setup";
-import { DEFAULT_API_KEY_ENV, DEFAULT_ENDPOINT } from "./lib/constants";
+import { DEFAULT_API_KEY_ENV } from "./lib/constants";
 import { getDefaultLiteLLMConfigPath, initializeRuntime } from "./lib/runtime";
 import { materializeTemplate, writeDevelopmentDotenv } from "./lib/template";
 
@@ -123,8 +123,9 @@ await yargs(hideBin(process.argv))
               .option("endpoint", {
                 alias: "e",
                 type: "string",
-                default: DEFAULT_ENDPOINT,
-                describe: "Models endpoint to query",
+                demandOption: true,
+                describe:
+                  "Models endpoint URL or alias (lm-studio, ollama, llama-cpp)",
               })
               .option("config", {
                 alias: "c",

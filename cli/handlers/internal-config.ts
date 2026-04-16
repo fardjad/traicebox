@@ -5,6 +5,12 @@ import {
   writeLiteLLMConfig,
 } from "../lib/litellm-config";
 
+const ENDPOINT_ALIASES: Record<string, string> = {
+  "lm-studio": "http://127.0.0.1:1234/v1/models",
+  ollama: "http://localhost:11434/v1/models",
+  "llama-cpp": "http://localhost:8080/v1/models",
+};
+
 type OpenAIModel = {
   id?: string;
 };
@@ -113,7 +119,7 @@ function toModelList(
 }
 
 export async function importModelsFromOpenAICompatibleApi(
-  endpoint: string,
+  endpointOrAlias: string,
   configPath: string,
   apiKeyEnv: string,
   dependencies: InternalConfigDependencies = {},
@@ -122,6 +128,7 @@ export async function importModelsFromOpenAICompatibleApi(
   const fetchImpl = dependencies.fetchImpl ?? fetch;
   const log = dependencies.log ?? console.log;
   const parsedConfig = await configStore.read(configPath);
+  const endpoint = ENDPOINT_ALIASES[endpointOrAlias] ?? endpointOrAlias;
   const modelIds = await fetchModelIds(endpoint, apiKeyEnv, fetchImpl);
   const apiBase = toLiteLLMApiBase(endpoint);
   const modelList = toModelList(modelIds, "openai", apiBase, apiKeyEnv);

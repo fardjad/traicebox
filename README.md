@@ -5,7 +5,7 @@
 ### Key Use Cases
 
 - **Tool & Prompt Development**: Debug plugins, skills, or prompts for harness tools like [OpenCode](https://opencode.ai/) with full visibility.
-- **Model Evaluation**: Evaluate and compare local models (e.g., via LM Studio) with detailed trace logging. The built-in config generator makes setting up tools remarkably simple.
+- **Model Evaluation**: Evaluate and compare local models with detailed trace logging. The built-in config generator makes setting up tools remarkably simple.
 - **Application Development**: Build AI applications with minimal code changes. Requests routed through the built-in LiteLLM proxy automatically generate traces in Langfuse. You can group these traces into sessions by adding an `x-litellm-session-id` header to your requests.
 
 ### Included in the Stack
@@ -80,13 +80,22 @@ traicebox setup
 
 ### 2. Import Models
 
-Before starting the stack, you need to import your available models into LiteLLM. By default, Traicebox looks for an [LM Studio](https://lmstudio.ai/) endpoint at `http://localhost:1234/v1/models`.
+Before starting the stack, you need to import your available models into LiteLLM. Traicebox requires an endpoint URL or alias to fetch models from.
+
+Supported aliases for common local tools:
+
+| Alias | Default Endpoint URL |
+| :--- | :--- |
+| `lm-studio` | `http://127.0.0.1:1234/v1/models` |
+| `ollama` | `http://localhost:11434/v1/models` |
+| `llama-cpp` | `http://localhost:8080/v1/models` |
+
 
 ```bash
-traicebox models import-from-openai-api
+traicebox models import-from-openai-api --endpoint lm-studio
 ```
 
-To use a different OpenAI-compatible endpoint:
+To use a custom OpenAI-compatible endpoint URL:
 
 ```bash
 traicebox models import-from-openai-api --endpoint http://your-api:port/v1/models
@@ -99,7 +108,7 @@ OPENAI_COMPATIBLE_API_KEY="your-api-key" traicebox models import-from-openai-api
 ```
 
 
-### 3. Configure External Tools (Optional)
+### 3. Configure Harness Integration (Optional)
 
 If you use [OpenCode](https://opencode.ai/), you can synchronize its model configuration with Traicebox.
 
@@ -225,10 +234,10 @@ LiteLLM loads its proxy config from `${TRAICEBOX_HOME}/litellm/config.yaml`. The
 
 `OPENAI_COMPATIBLE_API_KEY` is intentionally not persisted by Tr**ai**cebox. For local backends such as LM Studio, Ollama, or llama.cpp, no secret is needed. For authenticated upstreams, run `traicebox` through your password manager CLI so it injects `OPENAI_COMPATIBLE_API_KEY` into the process; Tr**ai**cebox will materialize that into an ephemeral Docker secret for LiteLLM only.
 
-To replace the LiteLLM `model_list` from an OpenAI-compatible `/v1/models` endpoint:
+To replace the LiteLLM `model_list` from an OpenAI-compatible `/v1/models` endpoint (or alias like `lm-studio`, `ollama`, `llama-cpp`):
 
 ```bash
-traicebox models import-from-openai-api
+traicebox models import-from-openai-api --endpoint lm-studio
 ```
 
 If that endpoint requires auth, inject `OPENAI_COMPATIBLE_API_KEY` into the command environment first. If it does not, the command works without a key.
