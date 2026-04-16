@@ -1,7 +1,7 @@
 {
   "name": "traicebox",
-  "version": "0.1.4",
-  "description": "A zero-config local developer stack for tracing and session tracking around LLM and AI model workflows",
+  "version": "0.1.5",
+  "description": "A local developer stack for tracing and session tracking around LLM and AI model workflows",
   "license": "MIT",
   "author": "Fardjad Davari <public@fardjad.com>",
   "repository": {
@@ -16,7 +16,6 @@
     "debugging",
     "developer-tools",
     "cli",
-    "zero-config",
     "session-tracking"
   ],
   "type": "module",

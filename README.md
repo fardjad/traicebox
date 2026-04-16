@@ -1,6 +1,6 @@
 # Traicebox
 
-**Traicebox** is a zero-config local developer stack for tracing and session tracking around LLM and AI model workflows. It enables developers to have a working local tracing and inspection setup within minutes.
+**Traicebox** is a local developer stack for tracing and session tracking around LLM and AI model workflows. It enables developers to have a working local tracing and inspection setup within minutes.
 
 ### Key Use Cases
 
