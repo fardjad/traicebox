@@ -132,12 +132,6 @@ await yargs(hideBin(process.argv))
                 default: defaultConfigPath,
                 describe: "LiteLLM YAML config to rewrite",
               })
-              .option("provider", {
-                alias: "p",
-                type: "string",
-                describe:
-                  "Optional LiteLLM provider prefix for litellm_params.model",
-              })
               .option("api-key-env", {
                 type: "string",
                 default: DEFAULT_API_KEY_ENV,
@@ -148,7 +142,6 @@ await yargs(hideBin(process.argv))
             await importModelsFromOpenAICompatibleApi(
               args.endpoint,
               args.config,
-              args.provider,
               args.apiKeyEnv,
             );
           },

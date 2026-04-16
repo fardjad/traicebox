@@ -29,7 +29,6 @@ describe("importModelsFromOpenAICompatibleApi", () => {
     await importModelsFromOpenAICompatibleApi(
       "http://localhost:1234/v1/models",
       configPath,
-      "openai",
       "OPENAI_COMPATIBLE_API_KEY",
       {
         configStore: {

@@ -92,24 +92,29 @@ function toLiteLLMApiBase(endpoint: string): string {
 
 function toModelList(
   modelIds: string[],
-  provider: string | undefined,
+  provider: string,
   apiBase: string,
   apiKeyEnv: string,
 ): LiteLLMModelEntry[] {
-  return modelIds.map((modelId) => ({
-    model_name: modelId,
-    litellm_params: {
-      model: provider ? `${provider}/${modelId}` : modelId,
-      api_base: apiBase,
-      api_key: `os.environ/${apiKeyEnv}`,
-    },
-  }));
+  return modelIds.map((modelId) => {
+    const prefixedModel = modelId.startsWith(`${provider}/`)
+      ? modelId
+      : `${provider}/${modelId}`;
+
+    return {
+      model_name: modelId,
+      litellm_params: {
+        model: prefixedModel,
+        api_base: apiBase,
+        api_key: `os.environ/${apiKeyEnv}`,
+      },
+    };
+  });
 }
 
 export async function importModelsFromOpenAICompatibleApi(
   endpoint: string,
   configPath: string,
-  provider: string | undefined,
   apiKeyEnv: string,
   dependencies: InternalConfigDependencies = {},
 ): Promise<void> {
@@ -119,7 +124,7 @@ export async function importModelsFromOpenAICompatibleApi(
   const parsedConfig = await configStore.read(configPath);
   const modelIds = await fetchModelIds(endpoint, apiKeyEnv, fetchImpl);
   const apiBase = toLiteLLMApiBase(endpoint);
-  const modelList = toModelList(modelIds, provider, apiBase, apiKeyEnv);
+  const modelList = toModelList(modelIds, "openai", apiBase, apiKeyEnv);
 
   await configStore.write(configPath, {
     ...parsedConfig,
