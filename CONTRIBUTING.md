@@ -36,18 +36,7 @@ You can override the active home explicitly:
 TRAICEBOX_HOME=/path/to/home bun run traicebox start
 ```
 
-## Template Layout
-
-The template is materialized into the active Traicebox home and contains:
-
-- `compose.yml`
-- `caddy/`
-- `langfuse-proxy/`
-- `litellm/`
-- `litellm-ui-proxy/`
-- `postgres/`
-
-The CLI reads and rewrites `litellm/config.yaml` in that home when importing or clearing models.
+The CLI reads and rewrites `litellm/config.yaml` in the active home directory when importing or clearing models.
 
 ## Build
 
@@ -61,8 +50,14 @@ The compiled output in `./dist/index.js` disables Bun dotenv autoloading so runt
 
 ## Tests
 
-Run the targeted test suite:
+Isolated unit tests are located next to the source files they verify. You can run all of them at once:
 
 ```bash
 bun test
+```
+
+The heavy end-to-end tests are located in the `test/` directory and should be run individually:
+
+```bash
+bun run test/e2e-test.ts
 ```
