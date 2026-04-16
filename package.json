@@ -1,6 +1,6 @@
 {
   "name": "traicebox",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A zero-config local developer stack for tracing and session tracking around LLM and AI model workflows",
   "license": "MIT",
   "author": "Fardjad Davari <public@fardjad.com>",
@@ -29,7 +29,7 @@
   "scripts": {
     "traicebox": "TRAICEBOX_DEV=1 bun ./cli/index.ts",
     "build": "bun build ./cli/index.ts --outdir ./dist --target node",
-    "prepublishOnly": "bun run build",
+    "prepack": "bun run build",
     "test": "bun test",
     "typecheck": "tsc",
     "check": "biome check . && dprint check",
