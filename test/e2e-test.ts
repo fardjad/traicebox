@@ -10,7 +10,7 @@ process.chdir(join(import.meta.dir, ".."));
 type ShellResult = ReturnType<typeof $>;
 
 const TARGET_MODEL = "google/gemma-4-26b-a4b";
-const MODELS_ENDPOINT = "http://127.0.0.1:1234/v1";
+const MODELS_ENDPOINT = "http://127.0.0.1:1234/v1/models";
 
 async function buildProject() {
   console.log("Building the project...");
