@@ -15,7 +15,6 @@
 - **Auto-login Proxies**: Dynamic proxies providing immediate, authenticated access to LiteLLM UI and Langfuse.
 - **Harness Integration**: Automatic configuration generation for external tools like OpenCode.
 
-
 ## Prerequisites
 
 Traicebox requires [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) to be installed and running on your system.
@@ -84,12 +83,11 @@ Before starting the stack, you need to import your available models into LiteLLM
 
 Supported aliases for common local tools:
 
-| Alias | Default Endpoint URL |
-| :--- | :--- |
-| `lm-studio` | `http://127.0.0.1:1234/v1/models` |
-| `ollama` | `http://localhost:11434/v1/models` |
-| `llama-cpp` | `http://localhost:8080/v1/models` |
-
+| Alias       | Default Endpoint URL               |
+| :---------- | :--------------------------------- |
+| `lm-studio` | `http://127.0.0.1:1234/v1/models`  |
+| `ollama`    | `http://localhost:11434/v1/models` |
+| `llama-cpp` | `http://localhost:8080/v1/models`  |
 
 ```bash
 traicebox models import-from-openai-api --endpoint lm-studio
@@ -106,7 +104,6 @@ If the endpoint requires authentication, provide the API key via the `OPENAI_COM
 ```bash
 OPENAI_COMPATIBLE_API_KEY="your-api-key" traicebox models import-from-openai-api --endpoint http://your-api:port/v1/models
 ```
-
 
 ### 3. Configure Harness Integration (Optional)
 
@@ -187,15 +184,14 @@ Refresh the [Langfuse sessions page](http://langfuse.localhost:5483/project/loca
 
 ### Other Useful Commands
 
-| Command | Description |
-| :--- | :--- |
-| `traicebox stop` | Stop the stack. |
-| `traicebox restart` | Recreate and restart the stack. |
-| `traicebox destroy` | Remove the stack and delete local data volumes. |
-| `traicebox models clear` | Clear the custom model list from LiteLLM. |
+| Command                  | Description                                     |
+| :----------------------- | :---------------------------------------------- |
+| `traicebox stop`         | Stop the stack.                                 |
+| `traicebox restart`      | Recreate and restart the stack.                 |
+| `traicebox destroy`      | Remove the stack and delete local data volumes. |
+| `traicebox models clear` | Clear the custom model list from LiteLLM.       |
 
 For more information on available commands and options, run `traicebox --help`.
-
 
 ## Configuration
 
@@ -203,20 +199,20 @@ Traicebox stores its configuration and data in `${TRAICEBOX_HOME}`. You can over
 
 By default, it is located at:
 
-| OS | Default `${TRAICEBOX_HOME}` |
-| :--- | :--- |
-| **macOS** | `~/Library/Application Support/Traicebox` |
-| **Windows** | `%APPDATA%\Traicebox` |
+| OS                 | Default `${TRAICEBOX_HOME}`                            |
+| :----------------- | :----------------------------------------------------- |
+| **macOS**          | `~/Library/Application Support/Traicebox`              |
+| **Windows**        | `%APPDATA%\Traicebox`                                  |
 | **Linux / Others** | `~/.config/traicebox` (or respects `$XDG_CONFIG_HOME`) |
 
 ### `traicebox.yaml`
 
 You can customize the stack behavior by creating or editing `${TRAICEBOX_HOME}/traicebox.yaml`.
 
-| Option | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `host` | `string` | `127.0.0.1` | The host address that Traicebox services will bind to. |
-| `port` | `number` | `5483` | The port that Traicebox services will be accessible through. |
+| Option | Type     | Default     | Description                                                  |
+| :----- | :------- | :---------- | :----------------------------------------------------------- |
+| `host` | `string` | `127.0.0.1` | The host address that Traicebox services will bind to.       |
+| `port` | `number` | `5483`      | The port that Traicebox services will be accessible through. |
 
 Example:
 
@@ -224,7 +220,6 @@ Example:
 host: 127.0.0.1
 port: 5483
 ```
-
 
 ## LiteLLM
 
@@ -259,4 +254,3 @@ traicebox generate-harness-config opencode
 LiteLLM sends OTEL traces to Langfuse using the built-in `langfuse_otel` callback and `LANGFUSE_OTEL_HOST=http://langfuse-web:3000`.
 
 Langfuse is accessible at `http://langfuse.localhost:5483`. By default, Traicebox disables public signups and automatically creates a browser session for the seeded admin user so you can start tracing immediately.
-
