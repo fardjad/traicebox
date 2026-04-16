@@ -1,0 +1,50 @@
+name: npm-publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish
+        required: false
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # Required for NPM provenance
+      contents: read # Required for checkout
+
+    steps:
+      - uses: actions/checkout@main
+        with:
+          ref: ${{ inputs.tag || github.event.release.tag_name || github.ref }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@main
+        with:
+          bun-version: latest
+
+      - name: Setup Node
+        uses: actions/setup-node@main
+        with:
+          node-version: "lts/*"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Publish
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          TAG="${INPUT_TAG:-$RELEASE_TAG}"
+
+          case "$TAG" in
+            v*) ;;
+            *) echo "Unsupported release tag: $TAG" >&2; exit 1 ;;
+          esac
+
+          bun install
+          bun pm pack
+          npm publish *.tgz --provenance --access public

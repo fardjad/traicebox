@@ -1,0 +1,85 @@
+name: release
+
+on:
+  workflow_run:
+    workflows: ["ci"]
+    branches: [main]
+    types:
+      - completed
+
+jobs:
+  release:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
+    steps:
+      - uses: actions/checkout@main
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@main
+        with:
+          bun-version: latest
+
+      - name: Check version
+        id: check_version
+        run: |
+          VERSION=$(bun pm pkg get version | jq -r)
+          TAG="v${VERSION}"
+          
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} already exists on remote."
+            echo "version_changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Tag ${TAG} does not exist, proceeding."
+            echo "version_changed=true" >> "$GITHUB_OUTPUT"
+            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build CLI package
+        if: steps.check_version.outputs.version_changed == 'true'
+        run: |
+          bun install
+          bun run build
+
+      - name: Build CLI release binaries
+        id: build_binaries
+        if: steps.check_version.outputs.version_changed == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p ./dist
+          for target_map in \
+            "bun-linux-x64:dist/traicebox-linux-x64" \
+            "bun-windows-x64:dist/traicebox-windows-x64.exe" \
+            "bun-darwin-x64:dist/traicebox-macos-x64" \
+            "bun-darwin-arm64:dist/traicebox-macos-arm64" \
+            "bun-linux-arm64:dist/traicebox-linux-arm64" \
+            "bun-windows-arm64:dist/traicebox-windows-arm64.exe"
+          do
+            target="${target_map%%:*}"
+            outfile="${target_map##*:}"
+            echo "Building ${target} -> ${outfile}"
+            bun build ./cli/index.ts --compile --no-compile-autoload-dotenv --target="${target}" --outfile="${outfile}"
+          done
+          ARTIFACTS="dist/traicebox-linux-x64 dist/traicebox-windows-x64.exe dist/traicebox-macos-x64 dist/traicebox-macos-arm64 dist/traicebox-linux-arm64 dist/traicebox-windows-arm64.exe"
+          echo "artifacts=${ARTIFACTS}" >> "$GITHUB_OUTPUT"
+
+      - name: Create release
+        if: steps.check_version.outputs.version_changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.check_version.outputs.tag }}
+        run: |
+          gh release create "${TAG}" ${{ steps.build_binaries.outputs.artifacts }} \
+            --title "traicebox ${{ steps.check_version.outputs.version }}" \
+            --target "$GITHUB_SHA" \
+            --generate-notes
+
+      - name: Trigger NPM publish
+        if: steps.check_version.outputs.version_changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.check_version.outputs.tag }}
+        run: gh workflow run npm-publish.yml --ref main -f "tag=${TAG}"
