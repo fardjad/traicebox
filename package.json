@@ -1,6 +1,6 @@
 {
   "name": "traicebox",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A zero-config local developer stack for tracing and session tracking around LLM and AI model workflows",
   "license": "MIT",
   "author": "Fardjad Davari <public@fardjad.com>",
