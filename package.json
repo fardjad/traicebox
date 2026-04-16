@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "description": "A zero-config local developer stack for tracing and session tracking around LLM and AI model workflows",
   "license": "MIT",
-  "author": {
-    "name": "Fardjad Davari",
-    "email": "public@fardjad.com",
-    "url": "https://www.fardjad.com"
+  "author": "Fardjad Davari <public@fardjad.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fardjad/traicebox"
   },
   "keywords": [
     "ai",
