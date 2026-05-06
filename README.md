@@ -17,7 +17,7 @@
 
 ## Prerequisites
 
-Traicebox requires [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) to be installed and running on your system.
+Traicebox requires either [Docker](https://www.docker.com/) with Docker Compose or [Podman](https://podman.io/) with Podman Compose to be installed and running on your system.
 
 ## Installation
 
@@ -219,10 +219,11 @@ By default, it is located at:
 
 You can customize the stack behavior by creating or editing `${TRAICEBOX_HOME}/traicebox.yaml`.
 
-| Option | Type     | Default     | Description                                                  |
-| :----- | :------- | :---------- | :----------------------------------------------------------- |
-| `host` | `string` | `127.0.0.1` | The host address that Traicebox services will bind to.       |
-| `port` | `number` | `5483`      | The port that Traicebox services will be accessible through. |
+| Option    | Type     | Default     | Description                                                                      |
+| :-------- | :------- | :---------- | :------------------------------------------------------------------------------- |
+| `host`    | `string` | `127.0.0.1` | The host address that Traicebox services will bind to.                           |
+| `port`    | `number` | `5483`      | The port that Traicebox services will be accessible through.                     |
+| `runtime` | `string` | auto-detect | Optional. Force Traicebox to use `docker` or `podman` instead of auto-detecting. |
 
 Example:
 

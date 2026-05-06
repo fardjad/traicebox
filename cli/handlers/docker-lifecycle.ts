@@ -8,7 +8,7 @@ import {
   LANGFUSE_HOST,
   LITELLM_HOST,
 } from "../lib/constants";
-import { ensureDockerReady } from "../lib/docker";
+import { type ContainerRuntime, ensureDockerReady } from "../lib/docker";
 import { fail } from "../lib/errors";
 import { type LiteLLMConfig, readLiteLLMConfig } from "../lib/litellm-config";
 import {
@@ -138,7 +138,11 @@ function cleanupOpenAICompatibleApiKeySecretMaterialSync(): void {
   }
 }
 
-async function runDockerCompose(args: string[], logs: boolean): Promise<void> {
+async function runDockerComposeWithRuntime(
+  containerRuntime: ContainerRuntime,
+  args: string[],
+  logs: boolean,
+): Promise<void> {
   const runtime = getRuntime();
   const env = {
     ...process.env,
@@ -147,7 +151,7 @@ async function runDockerCompose(args: string[], logs: boolean): Promise<void> {
   };
 
   try {
-    const proc = spawn("docker", ["compose", ...args], {
+    const proc = spawn(containerRuntime.command, ["compose", ...args], {
       cwd: runtime.home,
       env: env as Record<string, string>,
       stdio: [
@@ -185,7 +189,7 @@ async function runDockerCompose(args: string[], logs: boolean): Promise<void> {
         process.stderr.write(stderr);
       }
       fail(
-        `docker compose ${args.join(" ")} failed with exit code ${exitCode}`,
+        `${containerRuntime.command} compose ${args.join(" ")} failed with exit code ${exitCode}`,
       );
     }
   } finally {
@@ -241,8 +245,12 @@ export async function runStackCommand(
   logs: boolean,
 ): Promise<void> {
   ensureActiveHomeExists();
+  const runtime = getRuntime();
 
-  await ensureDockerReady().catch((error) => {
+  const containerRuntime = await ensureDockerReady(
+    undefined,
+    runtime.containerRuntime,
+  ).catch((error) => {
     fail(error instanceof Error ? error.message : String(error));
   });
 
@@ -271,11 +279,12 @@ export async function runStackCommand(
         : ["up", "-d", "--remove-orphans", "--wait", ...LONG_RUNNING_SERVICES];
 
     await runStep("Starting stack", logs, async () => {
-      await runDockerCompose(upArgs, logs);
+      await runDockerComposeWithRuntime(containerRuntime, upArgs, logs);
     });
 
     await runStep("Bootstrapping LiteLLM", logs, async () => {
-      await runDockerCompose(
+      await runDockerComposeWithRuntime(
+        containerRuntime,
         ["run", "--rm", "--no-deps", "litellm-bootstrap"],
         logs,
       );
@@ -292,7 +301,7 @@ export async function runStackCommand(
     command === "stop" ? "Stopping stack" : "Destroying stack",
     logs,
     async () => {
-      await runDockerCompose(downArgs, logs);
+      await runDockerComposeWithRuntime(containerRuntime, downArgs, logs);
     },
   );
 }

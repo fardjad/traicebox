@@ -2,13 +2,16 @@ import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, join } from "node:path";
 import yaml from "yaml";
-
 import {
   DEFAULT_DEV_HOME_DIRNAME,
   LITELLM_CONFIG_RELATIVE_PATH,
   TRAICEBOX_DEV_ENV,
   TRAICEBOX_HOME_ENV,
 } from "./constants";
+import {
+  type ContainerRuntimeCommand,
+  SUPPORTED_CONTAINER_RUNTIME_COMMANDS,
+} from "./docker";
 import { fail } from "./errors";
 import { resolveStackEnv, type StackEnv } from "./stack-env";
 
@@ -16,6 +19,7 @@ export type RuntimeContext = {
   home: string;
   dev: boolean;
   stackEnv: StackEnv;
+  containerRuntime?: ContainerRuntimeCommand;
 };
 
 type ResolveHomeArgs = {
@@ -41,6 +45,7 @@ export function initializeRuntime(): RuntimeContext {
   });
 
   const configPath = join(resolvedHome.home, "traicebox.yaml");
+  let containerRuntime: ContainerRuntimeCommand | undefined;
   if (existsSync(configPath)) {
     try {
       const configObj = yaml.parse(readFileSync(configPath, "utf-8")) as Record<
@@ -58,6 +63,7 @@ export function initializeRuntime(): RuntimeContext {
         ) {
           env.TRAICEBOX_PORT = String(configObj.port);
         }
+        containerRuntime = resolveConfiguredContainerRuntime(configObj.runtime);
       }
     } catch {
       fail(`Failed to parse config file: ${configPath}`);
@@ -68,6 +74,7 @@ export function initializeRuntime(): RuntimeContext {
     home: resolvedHome.home,
     dev: resolvedHome.dev,
     stackEnv: resolveStackEnv(env),
+    containerRuntime,
   };
 
   return runtimeContext;
@@ -150,4 +157,25 @@ function isTruthy(value: string | undefined): boolean {
 
 function toAbsolutePath(cwd: string, value: string): string {
   return isAbsolute(value) ? value : join(cwd, value);
+}
+
+export function resolveConfiguredContainerRuntime(
+  value: unknown,
+): ContainerRuntimeCommand | undefined {
+  if (value == null) {
+    return undefined;
+  }
+
+  if (
+    typeof value === "string" &&
+    SUPPORTED_CONTAINER_RUNTIME_COMMANDS.includes(
+      value as ContainerRuntimeCommand,
+    )
+  ) {
+    return value as ContainerRuntimeCommand;
+  }
+
+  throw new Error(
+    "Invalid runtime in traicebox.yaml. Expected 'docker' or 'podman'.",
+  );
 }

@@ -5,11 +5,13 @@ import { getRuntime } from "../lib/runtime";
 import { materializeTemplate, writeDevelopmentDotenv } from "../lib/template";
 
 export async function runSetup(force = false): Promise<void> {
-  await ensureDockerReady().catch((error) => {
-    fail(error instanceof Error ? error.message : String(error));
-  });
-
   const runtime = getRuntime();
+
+  await ensureDockerReady(undefined, runtime.containerRuntime).catch(
+    (error) => {
+      fail(error instanceof Error ? error.message : String(error));
+    },
+  );
 
   if (force) {
     rmSync(runtime.home, { recursive: true, force: true });

@@ -11,19 +11,123 @@ export type CommandExecutor = (
   command: string[],
 ) => Promise<CommandExecutorResult>;
 
+export type ContainerRuntimeCommand = "docker" | "podman";
+
+export type ContainerRuntime = {
+  command: ContainerRuntimeCommand;
+};
+
+export const SUPPORTED_CONTAINER_RUNTIME_COMMANDS = [
+  "docker",
+  "podman",
+] as const satisfies readonly ContainerRuntimeCommand[];
+
+const SUPPORTED_RUNTIMES: readonly ContainerRuntime[] = [
+  { command: "docker" },
+  { command: "podman" },
+] as const;
+
 export async function ensureDockerReady(
   executor: CommandExecutor = executeCommand,
-): Promise<void> {
-  const composeResult = await executor(["docker", "compose", "version"]);
-  validateDockerComposeResult(composeResult);
+  preferredRuntime?: ContainerRuntimeCommand,
+): Promise<ContainerRuntime> {
+  if (preferredRuntime) {
+    return ensurePreferredRuntimeReady(preferredRuntime, executor);
+  }
 
-  const engineResult = await executor([
-    "docker",
-    "info",
-    "--format",
-    "{{.ServerVersion}}",
+  let sawInstalledRuntime = false;
+  let sawComposeCommand = false;
+
+  for (const runtime of SUPPORTED_RUNTIMES) {
+    const composeResult = await executor([
+      runtime.command,
+      "compose",
+      "version",
+    ]);
+
+    if (composeResult.errorCode === "ENOENT") {
+      continue;
+    }
+
+    sawInstalledRuntime = true;
+
+    if (composeResult.exitCode !== 0) {
+      continue;
+    }
+
+    sawComposeCommand = true;
+
+    const engineResult = await executor(getEngineProbeCommand(runtime.command));
+
+    if (engineResult.exitCode === 0) {
+      return runtime;
+    }
+  }
+
+  if (!sawInstalledRuntime) {
+    throw new Error(
+      "Neither Docker nor Podman CLI is available. Install one and try again.",
+    );
+  }
+
+  if (!sawComposeCommand) {
+    throw new Error(
+      "Neither Docker Compose nor Podman Compose is available. Check your installation and try again.",
+    );
+  }
+
+  throw new Error(
+    "Docker or Podman is installed but the engine is not reachable. Start it and try again.",
+  );
+}
+
+async function ensurePreferredRuntimeReady(
+  preferredRuntime: ContainerRuntimeCommand,
+  executor: CommandExecutor,
+): Promise<ContainerRuntime> {
+  const composeResult = await executor([
+    preferredRuntime,
+    "compose",
+    "version",
   ]);
-  validateDockerEngineResult(engineResult);
+
+  if (composeResult.errorCode === "ENOENT") {
+    throw new Error(
+      `${displayRuntimeName(preferredRuntime)} CLI is not available. Install ${displayRuntimeName(preferredRuntime)} and try again.`,
+    );
+  }
+
+  if (composeResult.exitCode !== 0) {
+    throw new Error(
+      `${displayRuntimeName(preferredRuntime)} Compose is not available. Check your ${displayRuntimeName(preferredRuntime)} installation and try again.`,
+    );
+  }
+
+  const engineResult = await executor(getEngineProbeCommand(preferredRuntime));
+
+  if (engineResult.errorCode === "ENOENT") {
+    throw new Error(
+      `${displayRuntimeName(preferredRuntime)} CLI is not available. Install ${displayRuntimeName(preferredRuntime)} and try again.`,
+    );
+  }
+
+  if (engineResult.exitCode !== 0) {
+    throw new Error(
+      `${displayRuntimeName(preferredRuntime)} is installed but the engine is not reachable. Start ${displayRuntimeName(preferredRuntime)} and try again.`,
+    );
+  }
+
+  return { command: preferredRuntime };
+}
+
+function displayRuntimeName(runtime: ContainerRuntimeCommand): string {
+  return runtime === "docker" ? "Docker" : "Podman";
+}
+
+function getEngineProbeCommand(runtime: ContainerRuntimeCommand): string[] {
+  return runtime === "docker"
+    ? [runtime, "info", "--format", "{{.ServerVersion}}"]
+    : [runtime, "info"];
 }
 
 export function validateDockerComposeResult(

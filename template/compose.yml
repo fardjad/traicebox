@@ -137,7 +137,7 @@ services:
       LANGFUSE_INIT_USER_NAME: ${LANGFUSE_INIT_USER_NAME}
       LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD}
     healthcheck:
-      test: ["CMD", "node", "-e", "const host = process.env.HOSTNAME || 'localhost'; fetch('http://' + host + ':3000/api/auth/csrf').then(async (r) => { const ok = r.ok && (await r.text()).includes('csrfToken'); process.exit(ok ? 0 : 1); }).catch(() => process.exit(1))"]
+      test: ["CMD", "node", "-e", "const { hostname } = require('node:os'); fetch('http://' + hostname() + ':3000/api/auth/csrf').then(async (r) => { const ok = r.ok && (await r.text()).includes('csrfToken'); process.exit(ok ? 0 : 1); }).catch(() => process.exit(1))"]
       interval: 5s
       timeout: 5s
       retries: 24

@@ -72,7 +72,7 @@ await yargs(hideBin(process.argv))
         alias: "l",
         type: "boolean",
         default: false,
-        describe: "Show docker compose output while starting",
+        describe: "Show compose output while starting",
       }),
     async (argv) => {
       await runStackCommand("start", (argv as StackArgs).logs);
@@ -86,7 +86,7 @@ await yargs(hideBin(process.argv))
         alias: "l",
         type: "boolean",
         default: false,
-        describe: "Show docker compose output while stopping",
+        describe: "Show compose output while stopping",
       }),
     async (argv) => {
       await runStackCommand("stop", (argv as StackArgs).logs);
@@ -100,7 +100,7 @@ await yargs(hideBin(process.argv))
         alias: "l",
         type: "boolean",
         default: false,
-        describe: "Show docker compose output while restarting",
+        describe: "Show compose output while restarting",
       }),
     async (argv) => {
       await runStackCommand("restart", (argv as StackArgs).logs);
@@ -114,7 +114,7 @@ await yargs(hideBin(process.argv))
         alias: "l",
         type: "boolean",
         default: false,
-        describe: "Show docker compose output while destroying",
+        describe: "Show compose output while destroying",
       }),
     async (argv) => {
       await runStackCommand("destroy", (argv as StackArgs).logs);

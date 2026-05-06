@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import { getInstalledTraiceboxHome, resolveTraiceboxHome } from "./runtime";
+import {
+  getInstalledTraiceboxHome,
+  resolveConfiguredContainerRuntime,
+  resolveTraiceboxHome,
+} from "./runtime";
 
 describe("resolveTraiceboxHome", () => {
   test("uses the installed app directory by default", () => {
@@ -58,5 +62,22 @@ describe("getInstalledTraiceboxHome", () => {
         homeDir: "/Users/far",
       }),
     ).toBe("/Users/far/Library/Application Support/Traicebox");
+  });
+});
+
+describe("resolveConfiguredContainerRuntime", () => {
+  test("returns undefined when runtime is not configured", () => {
+    expect(resolveConfiguredContainerRuntime(undefined)).toBeUndefined();
+  });
+
+  test("accepts docker and podman", () => {
+    expect(resolveConfiguredContainerRuntime("docker")).toBe("docker");
+    expect(resolveConfiguredContainerRuntime("podman")).toBe("podman");
+  });
+
+  test("fails for unsupported runtimes", () => {
+    expect(() => resolveConfiguredContainerRuntime("nerdctl")).toThrow(
+      "Invalid runtime in traicebox.yaml. Expected 'docker' or 'podman'.",
+    );
   });
 });
