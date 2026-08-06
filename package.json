@@ -1,6 +1,6 @@
 {
   "name": "traicebox",
-  "version": "0.1.31",
+  "version": "0.1.32",
   "description": "A local developer stack for tracing and session tracking around LLM and AI model workflows",
   "license": "MIT",
   "author": "Fardjad Davari <public@fardjad.com>",
@@ -42,7 +42,7 @@
     "typescript": "^7.0.2"
   },
   "dependencies": {
-    "picospinner": "^3.0.0",
+    "picospinner": "^3.1.2",
     "yaml": "^2.9.0",
     "yargs": "^18.1.0"
   }
