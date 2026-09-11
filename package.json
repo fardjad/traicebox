@@ -1,6 +1,6 @@
 {
   "name": "traicebox",
-  "version": "0.1.44",
+  "version": "0.1.45",
   "description": "A local developer stack for tracing and session tracking around LLM and AI model workflows",
   "license": "MIT",
   "author": "Fardjad Davari <public@fardjad.com>",
@@ -35,10 +35,10 @@
     "fix": "biome check --write . && dprint fmt"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.11",
+    "@biomejs/biome": "^2.5.12",
     "@types/bun": "^1.4.0",
     "@types/yargs": "^17.0.35",
-    "dprint": "^0.57.0",
+    "dprint": "^0.57.1",
     "typescript": "^7.0.2"
   },
   "dependencies": {
